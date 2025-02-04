@@ -1,0 +1,141 @@
+import React from "react";
+import { render, fireEvent, waitFor, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import AddContact from "../pages/AddContact";
+import * as router from "react-router";
+import { MemoryRouter } from "react-router-dom";
+import Dashboard from "../pages/Dashboard";
+import userEvent from "@testing-library/user-event";
+
+// Tambahkan mock untuk window.matchMedia
+//biasanya terlihat dalam komponen yang responsif terhadap perubahan ukuran layar atau kondisi lainnya
+window.matchMedia =
+  window.matchMedia ||
+  (() => ({
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  }));
+
+// jest.mock("react-router-dom", () => ({
+//   ...jest.requireActual("react-router-dom"),
+//   useNavigate: jest.fn(), // Pastikan mock ini berada di dalam jest.mock
+// }));
+
+const navigate = jest.fn();
+
+beforeEach(() => {
+  jest.spyOn(router, "useNavigate").mockImplementation(() => navigate);
+});
+
+describe("AddContact component", () => {
+  it("navigates back to /dashboard when Back button is clicked", () => {
+    // Render komponen
+    render(<AddContact />);
+
+    // Klik tombol "Back"
+    const backButton = screen.getByText("Back");
+    fireEvent.click(backButton);
+
+    // Periksa apakah useNavigate dipanggil dengan benar
+    expect(navigate).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("renders form correctly", () => {
+    const { getByLabelText, getByText } = render(<AddContact />);
+
+    // Pastikan elemen-elemen form ada sesuai dengan labelnya
+    expect(getByLabelText("First Name")).toBeInTheDocument();
+    expect(getByLabelText("Last Name")).toBeInTheDocument();
+    expect(getByLabelText("Age")).toBeInTheDocument();
+    expect(getByLabelText("Url Photo")).toBeInTheDocument();
+
+    // Pastikan tombol "Back" dan "Submit" ada
+    expect(getByText("Back")).toBeInTheDocument();
+    expect(getByText("Submit")).toBeInTheDocument();
+  });
+
+  it("submits form successfully", async () => {
+    const { getByLabelText, getByText } = render(<AddContact />);
+
+    fireEvent.change(getByLabelText("First Name"), {
+      target: { value: "John" },
+    });
+    fireEvent.change(getByLabelText("Last Name"), { target: { value: "Doe" } });
+    fireEvent.change(getByLabelText("Age"), { target: { value: 25 } });
+    fireEvent.change(getByLabelText("Url Photo"), {
+      target: { value: "https://example.com/photo.jpg" },
+    });
+
+    //click the submit button
+    const submitButton = getByText("Submit");
+    fireEvent.click(submitButton);
+
+    //wait for success message
+    await waitFor(() => {
+      expect(getByText("Submit success!")).toBeInTheDocument();
+    });
+  });
+
+  it("shows error message on form submission failure", async () => {
+    const { getByLabelText, getByText } = render(<AddContact />);
+
+    // Submit the form without filling required fields
+    const submitButton = getByText("Submit");
+    fireEvent.click(submitButton);
+
+    // Wait for error message
+    await waitFor(() => {
+      expect(getByText("Submit failed!")).toBeInTheDocument();
+    });
+  });
+
+  //   it("navigates back to /dashboard when Back button is clicked", () => {
+  //     // Render komponen
+  //     render(<AddContact />);
+
+  //     // Mendapatkan mock useNavigate
+  //     const mockNavigate = useNavigate;
+
+  //     // Klik tombol "Back"
+  //     const backButton = screen.getByText("Back");
+  //     fireEvent.click(backButton);
+
+  //     // Periksa apakah useNavigate dipanggil dengan benar
+  //     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+  //   });
+
+  //   it("navigates to Add Contact screen when Add Contact button is clicked", () => {
+  //     render(
+  //       <MemoryRouter>
+  //         <Dashboard />
+  //       </MemoryRouter>
+  //     );
+
+  //     // Click the "Add Contact" button
+  //     const addContactButton = screen.getByText("Add Contact");
+  //     userEvent.click(addContactButton);
+
+  //     // Check if useNavigate is called with the expected path
+  //     expect(useNavigate).toHaveBeenCalledWith("/dashboard/add-contact", {
+  //       replace: true,
+  //     });
+  //   });
+
+  //   it("navigates back to /dashboard when Back button isn clicked", () => {
+  //     const { getByText } = render(<AddContact />);
+
+  //     // Get the mocked useNavigate function
+  //     const mockNavigate = jest.fn();
+  //     jest
+  //       .spyOn(require("react-router-dom"), "useNavigate")
+  //       .mockReturnValue(mockNavigate);
+
+  //     // Click the Back button
+  //     const backButton = getByText("Back");
+  //     fireEvent.click(backButton);
+
+  //     // Assert that useNavigate is called with the expected parameter
+  //     expect(mockNavigate).toHaveBeenCalledWith("/dashboard");
+  //   });
+});

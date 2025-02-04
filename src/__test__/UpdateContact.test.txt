@@ -1,0 +1,82 @@
+import React from "react";
+import { render, fireEvent, waitFor, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import UpdateContact from "../pages/UpdateContact";
+import * as router from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
+
+window.matchMedia =
+  window.matchMedia ||
+  (() => ({
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  }));
+
+// Mock useNavigate
+// jest.mock("react-router-dom", () => ({
+//   ...jest.requireActual("react-router-dom"),
+//   useNavigate: jest.fn(),
+// }));
+
+const navigate = jest.fn();
+
+beforeEach(() => {
+  jest.spyOn(router, "useNavigate").mockImplementation(() => navigate);
+});
+
+describe("UpdateContact component", () => {
+  it("renders form correctly", () => {
+    const { getByLabelText, getByText } = render(<UpdateContact />);
+
+    // Pastikan elemen-elemen form ada sesuai dengan labelnya
+    expect(getByLabelText("First Name")).toBeInTheDocument();
+    expect(getByLabelText("Last Name")).toBeInTheDocument();
+    expect(getByLabelText("Age")).toBeInTheDocument();
+    expect(getByLabelText("Url Photo")).toBeInTheDocument();
+
+    // Pastikan tombol "Back" dan "Save Changes" ada
+    expect(getByText("Back")).toBeInTheDocument();
+    expect(getByText("Save Changes")).toBeInTheDocument();
+  });
+
+  it("submits form successfully", async () => {
+    const { getByLabelText, getByText } = render(<UpdateContact />);
+
+    fireEvent.change(getByLabelText("First Name"), {
+      target: { value: "John" },
+    });
+    fireEvent.change(getByLabelText("Last Name"), { target: { value: "Doe" } });
+    fireEvent.change(getByLabelText("Age"), { target: { value: 25 } });
+    fireEvent.change(getByLabelText("Url Photo"), {
+      target: { value: "https://example.com/photo.jpg" },
+    });
+
+    // Click the "Save Changes" button
+    const saveButton = getByText("Save Changes");
+    fireEvent.click(saveButton);
+
+    // Wait for success message
+    await waitFor(() => {
+      expect(getByText("Submit success!")).toBeInTheDocument();
+    });
+  });
+
+  it("navigates back to /dashboard when Back button is clicked", () => {
+    // Render komponen dengan menggunakan MemoryRouter untuk menangani navigasi
+    render(
+      <MemoryRouter initialEntries={["/dashboard/update-contact"]}>
+        <Routes>
+          <Route path="/dashboard/update-contact" element={<UpdateContact />} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // Klik tombol "Back"
+    const backButton = screen.getByText("Back");
+    fireEvent.click(backButton);
+
+    // Periksa apakah useNavigate dipanggil dengan benar
+    expect(navigate).toHaveBeenCalledWith("/dashboard");
+  });
+});

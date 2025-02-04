@@ -1,0 +1,77 @@
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import * as router from "react-router";
+import Dashboard from "../pages/Dashboard";
+import TableData from "../components/TableData";
+
+// Tambahkan mock untuk window.matchMedia
+//biasanya terlihat dalam komponen yang responsif terhadap perubahan ukuran layar atau kondisi lainnya
+window.matchMedia =
+  window.matchMedia ||
+  (() => ({
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  }));
+
+const navigate = jest.fn();
+
+const data = [];
+for (let i = 0; i < 100; i++) {
+  data.push({
+    key: i,
+    firstName: `Bilbo ${i}`,
+    lastName: "Baggins",
+    age: i + 1,
+    photo:
+      "http://vignette1.wikia.nocookie.net/lotr/images/6/68/Bilbo_baggins.jpg/revision/latest?cb=20130202022550",
+    // name: `Edward King ${i}`,
+    // age: 32,
+    // address: `London, Park Lane no. ${i}`,
+  });
+}
+beforeEach(() => {
+  jest.spyOn(router, "useNavigate").mockImplementation(() => navigate);
+});
+
+describe("Dashboard component", () => {
+  it("renders Dashboard component", () => {
+    render(<Dashboard />);
+
+    expect(screen.getByText("List Contacts")).toBeInTheDocument();
+    expect(screen.getByText("Add Contact")).toBeInTheDocument();
+  });
+
+  it("navigates to add-contact page when 'Add Contact' button is clicked", () => {
+    render(<Dashboard />);
+
+    const addContactButton = screen.getByText("Add Contact");
+    fireEvent.click(addContactButton);
+
+    // Check if the navigation has occurred
+    expect(navigate).toHaveBeenCalledWith("/dashboard/add-contact");
+  });
+
+  it("renders TableData component", () => {
+    render(<TableData data={data} />);
+
+    expect(screen.getByText("First Name")).toBeInTheDocument();
+    expect(screen.getByText("Last Name")).toBeInTheDocument();
+    expect(screen.getByText("Age")).toBeInTheDocument();
+    expect(screen.getByText("Action")).toBeInTheDocument();
+  });
+
+  it("navigates to update-contact page when 'Update' button is clicked", () => {
+    render(<TableData data={data} />);
+
+    // Find all elements with the text "Update"
+    const updateButtons = screen.getAllByText("Update");
+
+    // Assuming there is only one "Update" button, you can click the first one
+    fireEvent.click(updateButtons[0]);
+
+    // Check if the navigation has occurred
+    expect(navigate).toHaveBeenCalledWith("/dashboard/update-contact");
+  });
+});

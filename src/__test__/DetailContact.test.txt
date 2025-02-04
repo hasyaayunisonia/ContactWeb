@@ -1,0 +1,68 @@
+import React from "react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import DetailContact from "../pages/DetailContact";
+import * as router from "react-router";
+
+// Tambahkan mock untuk window.matchMedia
+window.matchMedia =
+  window.matchMedia ||
+  (() => ({
+    matches: false,
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
+  }));
+
+const navigate = jest.fn();
+
+beforeEach(() => {
+  jest.spyOn(router, "useNavigate").mockImplementation(() => navigate);
+});
+
+const expectedData = {
+  firstName: "John",
+  lastName: "Doe",
+  age: 30,
+  photo:
+    "https://media.allure.com/photos/611d13fc20f215dc04d04313/16:9/w_1280,c_limit/dylan%20obrien.jpg",
+};
+
+describe("DetailContact component", () => {
+  it("renders with correct data", () => {
+    const { getByText } = render(<DetailContact />);
+
+    // Ganti teks berikut dengan teks yang sesuai dengan data yang diharapkan
+    expect(getByText("First Name")).toBeInTheDocument();
+    expect(getByText("Last Name")).toBeInTheDocument();
+    expect(getByText("Age")).toBeInTheDocument();
+    // ...
+  });
+
+  it("navigates back to /dashboard when Back button is clicked", () => {
+    render(<DetailContact />);
+
+    // Klik tombol "Back"
+    const backButton = screen.getByText("Back");
+    fireEvent.click(backButton);
+
+    // Periksa apakah useNavigate dipanggil dengan benar
+    expect(navigate).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("sets form values correctly on component mount", () => {
+    const { getByText } = render(<DetailContact />);
+
+    expect(getByText(`${expectedData.firstName}`)).toBeInTheDocument();
+    expect(getByText(`${expectedData.lastName}`)).toBeInTheDocument();
+    expect(getByText(`${expectedData.age}`)).toBeInTheDocument();
+    expect(getByText(`${expectedData.photo}`)).toBeInTheDocument();
+  });
+
+  it("renders photo if photo URL is available", () => {
+    const { getByAltText } = render(<DetailContact />);
+
+    const imageElement = getByAltText("Can not load image");
+    expect(imageElement).toBeInTheDocument();
+    expect(imageElement).toHaveAttribute("src", expectedData.photo);
+  });
+});

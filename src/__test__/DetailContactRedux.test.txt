@@ -1,0 +1,160 @@
+import React from "react";
+import { render, waitFor, screen } from "@testing-library/react";
+import "@testing-library/jest-dom";
+import userEvent from "@testing-library/user-event";
+import { Provider } from "react-redux";
+import configureMockStore from "redux-mock-store";
+import thunk from "redux-thunk";
+import axios from "axios";
+import { MemoryRouter } from "react-router-dom"; // Import MemoryRouter
+import DetailContact from "../pages/DetailContact";
+import * as router from "react-router";
+// Mock Redux store
+const mockStore = configureMockStore([thunk]);
+
+// Mock Axios
+jest.mock("axios");
+
+const navigate = jest.fn();
+
+beforeEach(() => {
+  jest.spyOn(router, "useNavigate").mockImplementation(() => navigate);
+});
+
+describe("DetailContact component", () => {
+  it("renders correctly", async () => {
+    const store = mockStore({
+      contacts: {
+        getContactDetail: {
+          // Mock your contact detail data here
+          firstName: "John",
+          lastName: "Doe",
+          age: 30,
+          photo: "https://example.com/photo.jpg",
+        },
+      },
+    });
+
+    axios.get.mockResolvedValueOnce({
+      data: {
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          age: 30,
+          photo: "https://example.com/photo.jpg",
+        },
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        {/* Wrap your component with MemoryRouter */}
+        <MemoryRouter>
+          <DetailContact />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Wait for the loading to finish
+    await waitFor(() => {
+      expect(screen.getByText("First Name")).toBeInTheDocument();
+      // Add more assertions based on your component's structure
+    });
+
+    // Example of testing user interaction
+    userEvent.click(screen.getByText("Back"));
+    // Add more user interaction testing as needed
+  });
+
+  it("handles Back button click", async () => {
+    const store = mockStore({
+      contacts: {
+        getContactDetail: {
+          firstName: "John",
+          lastName: "Doe",
+          age: 30,
+          photo: "https://example.com/photo.jpg",
+        },
+      },
+    });
+
+    axios.get.mockResolvedValueOnce({
+      data: {
+        data: {
+          firstName: "John",
+          lastName: "Doe",
+          age: 30,
+          photo: "https://example.com/photo.jpg",
+        },
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <DetailContact />
+      </Provider>
+    );
+
+    // Wait for loading to finish
+    await waitFor(() => {
+      expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+    });
+
+    // Click the Back button
+    userEvent.click(screen.getByText("Back"));
+
+    // Assert the expected navigation
+    expect(navigate).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("displays loading state and content correctly", async () => {
+    const store = mockStore({
+      contacts: {
+        getContactDetail: false, // Assume no data is initially available
+      },
+    });
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <DetailContact />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Assert the loading state
+    expect(screen.queryByTestId("loading-spinner"));
+
+    // Wait for loading to finish
+    await waitFor(() => {
+      // Assert the content is displayed
+      expect(screen.getByText("First Name")).toBeInTheDocument();
+    });
+  });
+
+  it("handles error during data fetching", async () => {
+    const store = mockStore({
+      contacts: {
+        getContactDetail: false,
+      },
+    });
+
+    axios.get.mockRejectedValueOnce(
+      new Error("Failed to fetch contact details")
+    );
+
+    render(
+      <Provider store={store}>
+        <MemoryRouter>
+          <DetailContact />
+        </MemoryRouter>
+      </Provider>
+    );
+
+    // Wait for loading to finish
+    await waitFor(() => {
+      // Assert the error message is displayed
+      expect(screen.queryByTestId("loading-spinner"));
+    });
+  });
+});
